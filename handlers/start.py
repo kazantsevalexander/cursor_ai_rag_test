@@ -95,7 +95,6 @@ async def cmd_help(message: types.Message):
   • shimmer - теплый женский
 
 /reset - очистить историю диалога
-/index - проиндексировать документы из data/documents/
 /stats - статистика базы знаний
 /voices - список доступных голосов
 
@@ -131,57 +130,6 @@ async def cmd_reset(message: types.Message):
         "✅ История диалога очищена!\n\n"
         "Начнем с чистого листа. Чем могу помочь?"
     )
-
-
-@bot.message_handler(commands=['index'])
-async def cmd_index(message: types.Message):
-    """Handle /index command - reindex documents from data/documents/."""
-    user_id = message.from_user.id
-    logger.info(f"User {user_id} requested indexing")
-    
-    try:
-        from rag.index import vector_index
-        from config import DOCUMENTS_DIR
-        
-        # Check if documents exist
-        docs = list(DOCUMENTS_DIR.glob('*'))
-        docs = [d for d in docs if d.is_file() and d.suffix in ['.pdf', '.txt', '.md', '.docx']]
-        
-        if not docs:
-            await bot.send_message(
-                message.chat.id,
-                "⚠️ Документы не найдены.\n\n"
-                "Добавьте файлы в папку data/documents/\n"
-                "Поддерживаемые форматы: .txt, .md, .pdf, .docx"
-            )
-            return
-        
-        # Start indexing
-        await bot.send_message(
-            message.chat.id,
-            f"⏳ Индексирую {len(docs)} документов...\n\n"
-            "Это может занять некоторое время."
-        )
-        
-        # Perform indexing
-        count = vector_index.index_documents_directory(force_reindex=False)
-        
-        # Success message
-        await bot.send_message(
-            message.chat.id,
-            f"✅ Индексация завершена!\n\n"
-            f"📄 Проиндексировано фрагментов: {count}\n"
-            f"📁 Документов обработано: {len(docs)}\n\n"
-            "Теперь вы можете использовать /mode rag для работы с базой знаний."
-        )
-        
-    except Exception as e:
-        logger.error(f"Error indexing documents: {e}", exc_info=True)
-        await bot.send_message(
-            message.chat.id,
-            f"❌ Ошибка при индексации:\n{str(e)}\n\n"
-            "Проверьте логи для подробностей."
-        )
 
 
 @bot.message_handler(commands=['stats'])
