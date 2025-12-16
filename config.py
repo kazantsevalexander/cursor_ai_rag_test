@@ -24,7 +24,7 @@ if not OPENAI_API_KEY:
     raise ValueError("OPENAI_API_KEY is not set in .env file")
 
 # OpenAI API Configuration (always use direct OpenAI API)
-OPENAI_BASE_URL = "https://api.openai.com/v1"
+OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL")
 
 # Bot Modes
 class BotMode:
