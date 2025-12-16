@@ -10,7 +10,7 @@ from typing import Optional, Dict, Any
 from datetime import datetime
 import json
 
-from config import OPENAI_API_KEY, OPENAI_BASE_URL, USE_PROXYAPI, DATA_DIR
+from config import OPENAI_API_KEY, OPENAI_BASE_URL, DATA_DIR
 from utils.logging import logger
 
 
@@ -146,7 +146,7 @@ async def generate_image(
             "style": style
         }
         
-        # Determine API URL based on ProxyAPI usage
+        # Use OpenAI API directly
         api_url = f"{OPENAI_BASE_URL}/images/generations"
         
         # Make API request
@@ -251,7 +251,7 @@ async def generate_image_variations(
         data.add_field('n', str(n))
         data.add_field('size', size)
         
-        # Determine API URL based on ProxyAPI usage
+        # Use OpenAI API directly
         api_url = f"{OPENAI_BASE_URL}/images/variations"
         
         # Make API request

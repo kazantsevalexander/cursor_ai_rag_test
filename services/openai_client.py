@@ -10,7 +10,7 @@ from pathlib import Path
 from config import (
     OPENAI_API_KEY,
     OPENAI_BASE_URL,
-    USE_PROXYAPI,
+
     GPT_MODEL,
     WHISPER_MODEL,
     TTS_MODEL,
@@ -31,12 +31,7 @@ class OpenAIClient:
             base_url=OPENAI_BASE_URL
         )
         
-        if USE_PROXYAPI:
-            logger.info(f"OpenAI client initialized with ProxyAPI: {OPENAI_BASE_URL}")
-        else:
-            logger.info("OpenAI client initialized with direct API")
-        
-        self.use_proxyapi = USE_PROXYAPI
+        logger.info("OpenAI client initialized with direct API")
     
     async def generate_text_response(
         self,

@@ -8,7 +8,7 @@ openai>=1.35.0
 # RAG and embeddings
 langchain>=0.2.0
 langchain-openai>=0.1.0
-langchain-community>=0.2.0
+langchain-chroma>=0.1.0
 chromadb>=0.4.0
 pypdf>=3.17.0
 

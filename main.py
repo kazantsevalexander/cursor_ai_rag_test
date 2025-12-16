@@ -33,19 +33,29 @@ async def setup_bot():
         
         if docs:
             logger.info(f"Found {len(docs)} documents, indexing...")
-            count = vector_index.index_documents_directory(force_reindex=False)
-            logger.info(f"Indexed {count} document chunks")
+            try:
+                logger.info("Starting RAG indexing process...")
+                logger.info("Calling vector_index.index_documents_directory...")
+                count = vector_index.index_documents_directory(force_reindex=False)
+                logger.info(f"RAG indexing completed successfully: {count} document chunks indexed")
+            except Exception as e:
+                logger.error(f"Error during RAG indexing: {e}", exc_info=True)
+                logger.warning("Continuing bot startup despite indexing error...")
         else:
             logger.info("No documents found in data/documents/")
     
     except Exception as e:
-        logger.warning(f"Could not initialize RAG index: {e}")
+        logger.error(f"Could not initialize RAG index: {e}", exc_info=True)
+        logger.warning("Continuing bot startup despite RAG initialization error...")
+    
+    logger.info("RAG initialization step completed, proceeding to bot info...")
     
     try:
+        logger.info("Getting bot information...")
         bot_info = await bot.get_me()
-        logger.info(f"Bot started: @{bot_info.username}")
+        logger.info(f"Bot started successfully: @{bot_info.username}")
     except Exception as e:
-        logger.error(f"Could not get bot info: {e}")
+        logger.error(f"Could not get bot info: {e}", exc_info=True)
 
 
 async def shutdown_bot():

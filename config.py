@@ -23,10 +23,8 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
     raise ValueError("OPENAI_API_KEY is not set in .env file")
 
-# ProxyAPI Configuration (для работы в России без VPN)
-USE_PROXYAPI = os.getenv("USE_PROXYAPI", "true").lower() == "true"
-PROXYAPI_BASE_URL = "https://api.proxyapi.ru/openai/v1"
-OPENAI_BASE_URL = PROXYAPI_BASE_URL if USE_PROXYAPI else "https://api.openai.com/v1"
+# OpenAI API Configuration (always use direct OpenAI API)
+OPENAI_BASE_URL = "https://api.openai.com/v1"
 
 # Bot Modes
 class BotMode:
@@ -55,6 +53,7 @@ WHISPER_MODEL = "whisper-1"
 TTS_MODEL = "tts-1"
 VISION_MODEL = "gpt-4o"
 DALLE_MODEL = "dall-e-3"
+EMBEDDING_MODEL = "text-embedding-3-small"  # OpenAI embedding model
 
 # DALL-E Configuration
 DALLE_DEFAULT_SIZE = "1024x1024"  # Options: 1024x1024, 1024x1792, 1792x1024
