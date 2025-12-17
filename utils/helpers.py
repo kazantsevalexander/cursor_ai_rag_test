@@ -37,36 +37,6 @@ async def save_file_async(file_content: bytes, extension: str = "tmp") -> Path:
         raise
 
 
-def convert_ogg_to_wav(ogg_path: Union[str, Path]) -> Path:
-    """
-    Convert OGG audio file to WAV format using pydub.
-    
-    Args:
-        ogg_path: Path to the OGG file
-    
-    Returns:
-        Path to the converted WAV file
-    """
-    try:
-        # Lazy import to avoid audioop error on startup
-        from pydub import AudioSegment
-    except ImportError as e:
-        logger.error(f"pydub not available: {e}. Install ffmpeg and audioop support.")
-        raise
-    
-    ogg_path = Path(ogg_path)
-    wav_path = ogg_path.with_suffix('.wav')
-    
-    try:
-        audio = AudioSegment.from_ogg(ogg_path)
-        audio.export(wav_path, format='wav')
-        logger.debug(f"Converted {ogg_path} to {wav_path}")
-        return wav_path
-    except Exception as e:
-        logger.error(f"Error converting audio: {e}")
-        raise
-
-
 def cleanup_file(filepath: Union[str, Path]) -> None:
     """
     Delete a file safely.

@@ -5,7 +5,7 @@ Handles queries against the knowledge base with context-aware responses.
 
 from typing import List, Dict, Optional
 
-from rag.index import vector_index
+from rag.index import get_vector_index
 from services.openai_client import openai_client
 from utils.logging import logger
 from config import RAG_TOP_K
@@ -28,7 +28,7 @@ async def query_knowledge_base(
     try:
         # Search for relevant documents
         logger.debug(f"Searching knowledge base for: {query}")
-        results = vector_index.similarity_search_with_score(query, k=RAG_TOP_K)
+        results = get_vector_index().similarity_search_with_score(query, k=RAG_TOP_K)
         
         if not results:
             logger.warning("No relevant documents found, using fallback")
@@ -191,7 +191,7 @@ async def add_document_to_knowledge_base(file_path: str) -> dict:
         documents = document_loader.load_document(file_path)
         
         # Add to index
-        vector_index.add_documents(documents)
+        get_vector_index().add_documents(documents)
         
         logger.info(f"Added {file_path.name} to knowledge base")
         
@@ -218,5 +218,5 @@ def get_knowledge_base_stats() -> dict:
     Returns:
         Dictionary with statistics
     """
-    return vector_index.get_stats()
+    return get_vector_index().get_stats()
 

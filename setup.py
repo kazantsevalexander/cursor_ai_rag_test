@@ -46,11 +46,10 @@ def check_dependencies():
     print("\nChecking dependencies...")
     
     required = [
-        "aiogram",
+        "telebot",
         "openai",
         "langchain",
-        "chromadb",
-        "pydub",
+        "faiss",
         "aiofiles"
     ]
     
@@ -71,29 +70,7 @@ def check_dependencies():
     return True
 
 
-def check_ffmpeg():
-    """Check if FFmpeg is installed."""
-    print("\nChecking FFmpeg...")
-    import subprocess
-    
-    try:
-        result = subprocess.run(
-            ["ffmpeg", "-version"],
-            capture_output=True,
-            timeout=5
-        )
-        if result.returncode == 0:
-            print("✓ FFmpeg is installed")
-            return True
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass
-    
-    print("✗ FFmpeg not found")
-    print("Please install FFmpeg for audio processing:")
-    print("  Windows: https://ffmpeg.org/download.html")
-    print("  Linux: sudo apt-get install ffmpeg")
-    print("  Mac: brew install ffmpeg")
-    return False
+# FFmpeg is no longer required - Whisper API supports OGG directly
 
 
 def main():
@@ -114,21 +91,18 @@ def main():
     print("\n3. Checking Python dependencies...")
     deps_ok = check_dependencies()
     
-    # Check FFmpeg
-    print("\n4. Checking FFmpeg...")
-    ffmpeg_ok = check_ffmpeg()
-    
     # Summary
     print("\n" + "=" * 60)
     print("Setup Summary")
     print("=" * 60)
     
-    if deps_ok and ffmpeg_ok:
+    if deps_ok:
         print("✓ Setup complete!")
         print("\nNext steps:")
         print("1. Edit .env file and add your API keys")
         print("2. Place documents in data/documents/ (optional)")
         print("3. Run: python main.py")
+        print("\nNote: Voice messages work without ffmpeg - Whisper API supports OGG directly!")
     else:
         print("⚠ Setup incomplete. Please fix the issues above.")
         sys.exit(1)

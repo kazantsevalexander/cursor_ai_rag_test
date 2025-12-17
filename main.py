@@ -18,13 +18,20 @@ async def setup_bot():
     try:
         from handlers import start, text, voice, image, document_upload
         logger.info("Handlers imported successfully")
+        
+        # Setup bot commands menu (optional, don't fail if it doesn't work)
+        try:
+            await start.setup_bot_commands()
+        except Exception as menu_error:
+            logger.warning(f"Could not set up bot commands menu: {menu_error}")
+            logger.info("Bot will continue without menu commands")
     except Exception as e:
         logger.error(f"Error importing handlers: {e}", exc_info=True)
         raise
     
     # Initialize RAG index if documents exist
     try:
-        from rag.index import vector_index
+        from rag.index import get_vector_index
         from config import DOCUMENTS_DIR
         
         # Check if documents directory has files
@@ -32,30 +39,29 @@ async def setup_bot():
         docs = [d for d in docs if d.is_file() and d.suffix in ['.pdf', '.txt', '.md']]
         
         if docs:
-            logger.info(f"Found {len(docs)} documents, indexing...")
-            try:
-                logger.info("Starting RAG indexing process...")
-                logger.info("Calling vector_index.index_documents_directory...")
-                count = vector_index.index_documents_directory(force_reindex=False)
-                logger.info(f"RAG indexing completed successfully: {count} document chunks indexed")
-            except Exception as e:
-                logger.error(f"Error during RAG indexing: {e}", exc_info=True)
-                logger.warning("Continuing bot startup despite indexing error...")
+            logger.info(f"Found {len(docs)} documents, initializing RAG...")
+            
+            # Initialize index (lazy loading will happen on first use)
+            idx = get_vector_index()
+            current_count = idx.collection.count()
+            
+            if current_count == 0:
+                logger.info("Index is empty, building index...")
+                count = idx.index_documents_directory(force_reindex=True)
+                logger.info(f"RAG ready with {count} document chunks")
+            else:
+                logger.info(f"Index already contains {current_count} documents")
         else:
             logger.info("No documents found in data/documents/")
     
     except Exception as e:
-        logger.error(f"Could not initialize RAG index: {e}", exc_info=True)
-        logger.warning("Continuing bot startup despite RAG initialization error...")
-    
-    logger.info("RAG initialization step completed, proceeding to bot info...")
+        logger.warning(f"Could not initialize RAG index: {e}", exc_info=True)
     
     try:
-        logger.info("Getting bot information...")
         bot_info = await bot.get_me()
-        logger.info(f"Bot started successfully: @{bot_info.username}")
+        logger.info(f"Bot started: @{bot_info.username}")
     except Exception as e:
-        logger.error(f"Could not get bot info: {e}", exc_info=True)
+        logger.error(f"Could not get bot info: {e}")
 
 
 async def shutdown_bot():

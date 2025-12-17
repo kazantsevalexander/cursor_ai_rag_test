@@ -14,61 +14,136 @@ from config import VoiceType
 
 @bot.message_handler(commands=['voice'])
 async def cmd_voice(message: types.Message):
-    """Handle /voice command - change TTS voice."""
+    """Handle /voice command - change TTS voice with inline buttons."""
     user_id = message.from_user.id
+    current_voice = user_sessions.get_voice(user_id)
     
-    # Parse command arguments
-    args = message.text.split(maxsplit=1)
+    # Create inline keyboard with voice options
+    keyboard = types.InlineKeyboardMarkup(row_width=2)
     
-    if len(args) < 2:
-        # Show current voice and available voices
-        current_voice = user_sessions.get_voice(user_id)
-        current_info = get_voice_info(current_voice)
-        
-        voice_list = get_available_voices()
-        
-        await bot.send_message(
-            message.chat.id,
-            f"🔊 **Текущий голос:** {current_info['name']} ({current_voice})\n"
-            f"Тип: {current_info['type']}\n\n"
-            f"{voice_list}\n"
-            f"**Использование:**\n"
-            f"/voice <название>\n\n"
-            f"**Пример:**\n"
-            f"/voice nova"
-        )
-        return
-    
-    # Set new voice
-    new_voice = args[1].lower()
-    valid_voices = [
-        VoiceType.ALLOY,
-        VoiceType.ECHO,
-        VoiceType.NOVA,
-        VoiceType.FABLE,
-        VoiceType.ONYX,
-        VoiceType.SHIMMER
+    voices = [
+        ("🎵 Alloy", VoiceType.ALLOY, "Нейтральный"),
+        ("👨 Echo", VoiceType.ECHO, "Мужской"),
+        ("👩 Nova", VoiceType.NOVA, "Женский"),
+        ("🎭 Fable", VoiceType.FABLE, "Британский"),
+        ("🎤 Onyx", VoiceType.ONYX, "Глубокий"),
+        ("✨ Shimmer", VoiceType.SHIMMER, "Теплый"),
     ]
     
-    if new_voice not in valid_voices:
-        await bot.send_message(
-            message.chat.id,
-            f"❌ Неизвестный голос: `{new_voice}`\n\n"
-            f"Используйте /voice для списка доступных голосов."
+    buttons = []
+    for emoji_name, voice_value, voice_type in voices:
+        # Add checkmark to current voice
+        button_text = f"✅ {emoji_name}" if voice_value == current_voice else emoji_name
+        button = types.InlineKeyboardButton(
+            text=button_text,
+            callback_data=f"voice_{voice_value}"
         )
-        return
+        buttons.append(button)
     
-    user_sessions.set_voice(user_id, new_voice)
-    logger.info(f"User {user_id} switched to voice: {new_voice}")
+    # Add buttons in rows of 2
+    keyboard.add(buttons[0], buttons[1])
+    keyboard.add(buttons[2], buttons[3])
+    keyboard.add(buttons[4], buttons[5])
     
-    voice_info = get_voice_info(new_voice)
+    current_info = get_voice_info(current_voice)
+    
+    voice_info = f"""🔊 Выберите голос для ответов
+
+Текущий голос: {current_info['name']} ({current_voice})
+Тип: {current_info['type']}
+
+🎵 Alloy - нейтральный голос
+👨 Echo - мужской голос
+👩 Nova - женский голос
+🎭 Fable - британский акцент
+🎤 Onyx - глубокий мужской
+✨ Shimmer - теплый женский
+
+Голос используется в голосовом режиме (/mode voice)
+"""
     
     await bot.send_message(
         message.chat.id,
+        voice_info,
+        reply_markup=keyboard,
+        parse_mode=None
+    )
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('voice_'))
+async def callback_voice(call: types.CallbackQuery):
+    """Handle voice selection from inline buttons."""
+    user_id = call.from_user.id
+    new_voice = call.data.replace('voice_', '')
+    
+    # Set new voice
+    user_sessions.set_voice(user_id, new_voice)
+    logger.info(f"User {user_id} switched to voice: {new_voice}")
+    
+    # Answer callback query
+    await bot.answer_callback_query(call.id, "✅ Голос изменен!")
+    
+    # Update message with new selection
+    current_voice = new_voice
+    keyboard = types.InlineKeyboardMarkup(row_width=2)
+    
+    voices = [
+        ("🎵 Alloy", VoiceType.ALLOY),
+        ("👨 Echo", VoiceType.ECHO),
+        ("👩 Nova", VoiceType.NOVA),
+        ("🎭 Fable", VoiceType.FABLE),
+        ("🎤 Onyx", VoiceType.ONYX),
+        ("✨ Shimmer", VoiceType.SHIMMER),
+    ]
+    
+    buttons = []
+    for emoji_name, voice_value in voices:
+        button_text = f"✅ {emoji_name}" if voice_value == current_voice else emoji_name
+        button = types.InlineKeyboardButton(
+            text=button_text,
+            callback_data=f"voice_{voice_value}"
+        )
+        buttons.append(button)
+    
+    keyboard.add(buttons[0], buttons[1])
+    keyboard.add(buttons[2], buttons[3])
+    keyboard.add(buttons[4], buttons[5])
+    
+    current_info = get_voice_info(current_voice)
+    
+    voice_info = f"""🔊 Выберите голос для ответов
+
+Текущий голос: {current_info['name']} ({current_voice})
+Тип: {current_info['type']}
+
+🎵 Alloy - нейтральный голос
+👨 Echo - мужской голос
+👩 Nova - женский голос
+🎭 Fable - британский акцент
+🎤 Onyx - глубокий мужской
+✨ Shimmer - теплый женский
+
+Голос используется в голосовом режиме (/mode voice)
+"""
+    
+    # Edit message
+    await bot.edit_message_text(
+        voice_info,
+        call.message.chat.id,
+        call.message.message_id,
+        reply_markup=keyboard,
+        parse_mode=None
+    )
+    
+    # Send confirmation
+    voice_info_detail = get_voice_info(new_voice)
+    await bot.send_message(
+        call.message.chat.id,
         f"✅ Голос изменен!\n\n"
-        f"🔊 {voice_info['name']} ({new_voice})\n"
-        f"Тип: {voice_info['type']}\n"
-        f"{voice_info['description']}"
+        f"🔊 {voice_info_detail['name']} ({new_voice})\n"
+        f"Тип: {voice_info_detail['type']}\n"
+        f"{voice_info_detail['description']}",
+        parse_mode=None
     )
 
 
@@ -76,7 +151,7 @@ async def cmd_voice(message: types.Message):
 async def cmd_voices(message: types.Message):
     """Handle /voices command - list all available voices."""
     voice_list = get_available_voices()
-    await bot.send_message(message.chat.id, voice_list)
+    await bot.send_message(message.chat.id, voice_list, parse_mode=None)
 
 
 @bot.message_handler(content_types=['voice'])
@@ -106,11 +181,19 @@ async def handle_voice_message(message: types.Message):
         # Process voice request
         response = await route_voice_request(user_id, voice_file_path)
         
+        # Check if there was an error
+        if 'error' in response:
+            error_msg = response.get('text', '❌ Ошибка обработки голосового сообщения. Попробуйте еще раз.')
+            await bot.send_message(message.chat.id, error_msg, parse_mode=None)
+            return
+        
         # Send transcription
-        await bot.send_message(
-            message.chat.id,
-            f"🎤 **Распознано:**\n_{response['transcription']}_\n"
-        )
+        if 'transcription' in response:
+            await bot.send_message(
+                message.chat.id,
+                f"🎤 Распознано:\n{response['transcription']}\n",
+                parse_mode=None
+            )
         
         # Check if response contains an image
         if response.get('has_image') and response.get('image_path'):

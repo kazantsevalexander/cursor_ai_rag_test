@@ -9,7 +9,7 @@ from pathlib import Path
 from bot import bot
 from config import DOCUMENTS_DIR
 from rag.loader import document_loader
-from rag.index import vector_index
+from rag.index import get_vector_index
 from utils.logging import logger
 
 
@@ -69,7 +69,7 @@ async def process_document_upload(message: types.Message, document: types.Docume
         chunks = document_loader.load_document(file_path)
         
         # Add to vector store
-        vector_index.add_documents(chunks)
+        get_vector_index().add_documents(chunks)
         
         logger.info(f"Indexed {len(chunks)} chunks from {document.file_name}")
         

@@ -146,7 +146,7 @@ async def generate_image(
             "style": style
         }
         
-        # Use OpenAI API directly
+        # Determine API URL based on ProxyAPI usage
         api_url = f"{OPENAI_BASE_URL}/images/generations"
         
         # Make API request
@@ -251,7 +251,7 @@ async def generate_image_variations(
         data.add_field('n', str(n))
         data.add_field('size', size)
         
-        # Use OpenAI API directly
+        # Determine API URL based on ProxyAPI usage
         api_url = f"{OPENAI_BASE_URL}/images/variations"
         
         # Make API request

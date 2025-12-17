@@ -13,51 +13,62 @@ from config import BotMode
 
 @bot.message_handler(commands=['mode'])
 async def cmd_mode(message: types.Message):
-    """Handle /mode command - change bot mode."""
+    """Handle /mode command - change bot mode with inline buttons."""
     user_id = message.from_user.id
+    current_mode = user_sessions.get_mode(user_id)
     
-    # Parse command arguments
-    args = message.text.split(maxsplit=1)
+    # Create inline keyboard with mode options
+    keyboard = types.InlineKeyboardMarkup(row_width=2)
     
-    if len(args) < 2:
-        # Show current mode and available modes
-        current_mode = user_sessions.get_mode(user_id)
-        
-        mode_info = f"""🔧 **Текущий режим:** `{current_mode}`
+    modes = [
+        ("📝 Текстовый", BotMode.TEXT, "Обычный диалог с GPT-4o"),
+        ("🎤 Голосовой", BotMode.VOICE, "Ответы голосом"),
+        ("📸 Vision", BotMode.VISION, "Анализ изображений"),
+        ("📚 RAG", BotMode.RAG, "База знаний"),
+    ]
+    
+    buttons = []
+    for emoji_name, mode_value, description in modes:
+        # Add checkmark to current mode
+        button_text = f"✅ {emoji_name}" if mode_value == current_mode else emoji_name
+        button = types.InlineKeyboardButton(
+            text=button_text,
+            callback_data=f"mode_{mode_value}"
+        )
+        buttons.append(button)
+    
+    # Add buttons in rows of 2
+    keyboard.add(buttons[0], buttons[1])
+    keyboard.add(buttons[2], buttons[3])
+    
+    mode_info = f"""🔧 Выберите режим работы
 
-**Доступные режимы:**
+Текущий режим: {current_mode}
 
-• `text` - Текстовый режим (GPT-4o)
-• `voice` - Голосовой режим (с TTS ответами)
-• `vision` - Анализ изображений (GPT-4 Vision)
-• `rag` - Работа с базой знаний
+📝 Текстовый - обычный диалог с GPT-4o
+🎤 Голосовой - ответы будут приходить голосом
+📸 Vision - анализ изображений
+📚 RAG - работа с базой знаний
 
-**Генерация изображений:**
-Просто напишите "Нарисуй...", "Создай изображение..." или "Сгенерируй картинку..."
-ИИ автоматически определит запрос и создаст изображение.
+💡 Генерация изображений доступна во всех режимах!
+Просто напишите "Нарисуй..." или "Создай изображение..."
+"""
+    
+    await bot.send_message(
+        message.chat.id,
+        mode_info,
+        reply_markup=keyboard,
+        parse_mode=None
+    )
 
-**Использование:**
-/mode <название_режима>
 
-**Примеры:**
-/mode text
-/mode rag"""
-        
-        await bot.send_message(message.chat.id, mode_info)
-        return
+@bot.callback_query_handler(func=lambda call: call.data.startswith('mode_'))
+async def callback_mode(call: types.CallbackQuery):
+    """Handle mode selection from inline buttons."""
+    user_id = call.from_user.id
+    new_mode = call.data.replace('mode_', '')
     
     # Set new mode
-    new_mode = args[1].lower()
-    valid_modes = [BotMode.TEXT, BotMode.VOICE, BotMode.VISION, BotMode.RAG]
-    
-    if new_mode not in valid_modes:
-        await bot.send_message(
-            message.chat.id,
-            f"❌ Неизвестный режим: `{new_mode}`\n\n"
-            f"Доступные режимы: {', '.join(valid_modes)}"
-        )
-        return
-    
     user_sessions.set_mode(user_id, new_mode)
     logger.info(f"User {user_id} switched to mode: {new_mode}")
     
@@ -68,9 +79,59 @@ async def cmd_mode(message: types.Message):
         BotMode.RAG: "📚 Режим RAG - работа с базой знаний"
     }
     
+    # Answer callback query
+    await bot.answer_callback_query(call.id, "✅ Режим изменен!")
+    
+    # Update message with new selection
+    current_mode = new_mode
+    keyboard = types.InlineKeyboardMarkup(row_width=2)
+    
+    modes = [
+        ("📝 Текстовый", BotMode.TEXT),
+        ("🎤 Голосовой", BotMode.VOICE),
+        ("📸 Vision", BotMode.VISION),
+        ("📚 RAG", BotMode.RAG),
+    ]
+    
+    buttons = []
+    for emoji_name, mode_value in modes:
+        button_text = f"✅ {emoji_name}" if mode_value == current_mode else emoji_name
+        button = types.InlineKeyboardButton(
+            text=button_text,
+            callback_data=f"mode_{mode_value}"
+        )
+        buttons.append(button)
+    
+    keyboard.add(buttons[0], buttons[1])
+    keyboard.add(buttons[2], buttons[3])
+    
+    mode_info = f"""🔧 Выберите режим работы
+
+Текущий режим: {current_mode}
+
+📝 Текстовый - обычный диалог с GPT-4o
+🎤 Голосовой - ответы будут приходить голосом
+📸 Vision - анализ изображений
+📚 RAG - работа с базой знаний
+
+💡 Генерация изображений доступна во всех режимах!
+Просто напишите "Нарисуй..." или "Создай изображение..."
+"""
+    
+    # Edit message
+    await bot.edit_message_text(
+        mode_info,
+        call.message.chat.id,
+        call.message.message_id,
+        reply_markup=keyboard,
+        parse_mode=None
+    )
+    
+    # Send confirmation
     await bot.send_message(
-        message.chat.id,
-        f"✅ Режим изменен!\n\n{mode_descriptions[new_mode]}"
+        call.message.chat.id,
+        f"✅ Режим изменен!\n\n{mode_descriptions[new_mode]}",
+        parse_mode=None
     )
 
 
@@ -83,22 +144,22 @@ async def cmd_image(message: types.Message):
     args = message.text.split(maxsplit=1)
     
     if len(args) < 2:
-        help_text = """🎨 **Генерация изображений**
+        help_text = """🎨 Генерация изображений
 
-**Автоматическая генерация:**
+Автоматическая генерация:
 Просто напишите "Нарисуй...", "Создай изображение..." и ИИ автоматически создаст картинку.
 
-**Примеры:**
+Примеры:
 • Нарисуй кота в космосе
 • Создай изображение футуристического города
 • Сгенерируй картинку заката на море
 
-**Прямая команда:**
+Прямая команда:
 /image <описание>
 
 Бот использует DALL-E 3 для создания изображений высокого качества."""
         
-        await bot.send_message(message.chat.id, help_text)
+        await bot.send_message(message.chat.id, help_text, parse_mode=None)
         return
     
     prompt = args[1]

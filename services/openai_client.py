@@ -10,7 +10,6 @@ from pathlib import Path
 from config import (
     OPENAI_API_KEY,
     OPENAI_BASE_URL,
-
     GPT_MODEL,
     WHISPER_MODEL,
     TTS_MODEL,
@@ -31,7 +30,7 @@ class OpenAIClient:
             base_url=OPENAI_BASE_URL
         )
         
-        logger.info("OpenAI client initialized with direct API")
+        logger.info(f"OpenAI client initialized: {OPENAI_BASE_URL}")
     
     async def generate_text_response(
         self,

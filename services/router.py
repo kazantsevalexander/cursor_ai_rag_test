@@ -134,9 +134,13 @@ async def route_voice_request(
         }
         
     except Exception as e:
-        logger.error(f"Error routing voice request: {e}")
+        logger.error(f"Error routing voice request: {e}", exc_info=True)
+        
+        error_text = "❌ Извините, произошла ошибка при обработке голосового сообщения.\n"
+        error_text += "Попробуйте еще раз или используйте текстовый режим."
+        
         return {
-            "text": "Извините, произошла ошибка при обработке голосового сообщения.",
+            "text": error_text,
             "error": str(e)
         }
 
