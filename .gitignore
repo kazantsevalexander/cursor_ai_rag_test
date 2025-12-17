@@ -37,7 +37,7 @@ ENV/
 
 # Data
 data/embeddings.db
-data/documents/*
+#data/documents/*
 !data/documents/.gitkeep
 *.ogg
 *.wav
